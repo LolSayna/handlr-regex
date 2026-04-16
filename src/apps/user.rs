@@ -396,7 +396,32 @@ fn select<O: Iterator<Item = String>>(
     selector: &str,
     mut opts: O,
 ) -> Result<String> {
-    use std::{io::prelude::*, process::Stdio};
+    use std::{io::prelude::*, process::{Stdio, Command}};
+    
+    // where to find icons
+    let script_path = "$XDG_CONFIG_HOME/waybar/bash/lookuptable.sh";
+
+    let mut opts_str = String::new();
+    // let mut opts_vec: Vec<String> = opts.collect();
+    for mut app_name in &mut opts {
+
+        let output = {
+            Command::new("sh")
+            .arg("-c")
+            .arg(format!("{} icon {}", script_path, app_name))
+            .output()
+            .expect("failed to find icons!")
+        };
+
+        let icon_path = str::from_utf8(&output.stdout).unwrap().trim();
+        
+        opts_str.push_str(&app_name);
+        opts_str.push_str(icon_path);
+        opts_str.push_str("\n");
+    }
+    
+    // fix escape characters
+    opts_str = opts_str.replace("\\0", "\0").replace("\\x1f", "\x1f");
 
     let process = {
         execute::command(selector)
@@ -409,7 +434,7 @@ fn select<O: Iterator<Item = String>>(
         process
             .stdin
             .ok_or_else(|| Error::Selector(selector.to_string()))?
-            .write_all(opts.join("\n").as_bytes())?;
+            .write_all(opts_str.as_bytes())?;
 
         let mut output = String::with_capacity(24);
 
