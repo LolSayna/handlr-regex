@@ -402,8 +402,7 @@ fn select<O: Iterator<Item = String>>(
     let script_path = "$XDG_CONFIG_HOME/waybar/bash/lookuptable.sh";
 
     let mut opts_str = String::new();
-    // let mut opts_vec: Vec<String> = opts.collect();
-    for mut app_name in &mut opts {
+    for app_name in &mut opts {
 
         let output = {
             Command::new("sh")
